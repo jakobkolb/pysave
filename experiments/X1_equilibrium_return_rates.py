@@ -61,8 +61,8 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     # building initial conditions
 
     # network:
-    n = 100
-    k = 10
+    n = 30
+    k = 3
     if test:
         n = 30
         k = 3
@@ -80,7 +80,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 10000
+    t_1 = 1000
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -194,13 +194,14 @@ def run_experiment(argv):
     """
 
     # switch testing mode
-    if len(argv) >= 1:
-        test = bool(int(argv[0]))
+    print argv
+    if len(argv) > 1:
+        test = bool(int(argv[1]))
     else:
         test = False
     # switch sub_experiment mode
-    if len(argv) >= 2:
-        mode = int(argv[1])
+    if len(argv) > 2:
+        mode = int(argv[2])
     else:
         mode = 0
 
@@ -208,10 +209,10 @@ def run_experiment(argv):
     set input/output paths
     """
     respath = os.path.dirname(os.path.realpath(__file__)) + "/output_data"
-    if getpass.getuser() == "jakob":
+    if getpass.getuser() == "yuki":
         tmppath = respath
-    elif getpass.getuser() == "kolb":
-        tmppath = "/p/tmp/kolb/Savings_Experiments"
+    elif getpass.getuser() == "asano":
+        tmppath = "/p/tmp/asano/Savings_Experiments"
     else:
         tmppath = "./"
 
@@ -228,7 +229,6 @@ def run_experiment(argv):
     save_path_res = \
         "{}/{}{}/" \
         .format(respath, test_folder, folder)
-
     """
     create parameter combinations and index
     """
@@ -289,16 +289,19 @@ def run_experiment(argv):
 
     # cluster mode: computation and post processing
     if mode == 0:
-        sample_size = 100 if not test else 2
+        sample_size = 2 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
         handle.resave(eva1, name1)
-        handle.resave(eva2, name2)
-        handle.resave(cf3, name3)
+        handle.resave(eva2, name2)plot_trajectories(save_path_res, name1, None, None)
 
         return 1
+
+    handle.resave(cf3, name3)
+    print 'now do trajectories'
+    #
 
     # local mode: plotting only
     if mode == 1:
@@ -309,5 +312,5 @@ def run_experiment(argv):
 
 
 if __name__ == "__main__":
-    cmdline_arguments = sys.argv
-    run_experiment([1])
+    cmdline_arguments = sys.argv#, 0,0]
+    run_experiment(cmdline_arguments)
