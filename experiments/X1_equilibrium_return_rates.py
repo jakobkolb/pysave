@@ -194,13 +194,13 @@ def run_experiment(argv):
     """
 
     # switch testing mode
-    if len(argv) > 1:
-        test = bool(int(argv[1]))
+    if len(argv) >= 1:
+        test = bool(int(argv[0]))
     else:
         test = False
     # switch sub_experiment mode
-    if len(argv) > 2:
-        mode = int(argv[2])
+    if len(argv) >= 2:
+        mode = int(argv[1])
     else:
         mode = 0
 
@@ -233,8 +233,8 @@ def run_experiment(argv):
     create parameter combinations and index
     """
 
-    taus = [round(x, 5) for x in list(np.linspace(1., 100., 51))]
-    phis = [round(x, 5) for x in list(np.linspace(0., 1., 51))]
+    taus = [round(x, 5) for x in list(np.linspace(1., 100., 2))]
+    phis = [round(x, 5) for x in list(np.linspace(0., 1., 2))]
     epss = [round(x, 5) for x in list(np.linspace(0., 0.01, 2))]
     tau, phi, eps = [1., 10., 100.], [.1, .5, .9], [0., .01]
 
@@ -310,4 +310,4 @@ def run_experiment(argv):
 
 if __name__ == "__main__":
     cmdline_arguments = sys.argv
-    run_experiment(cmdline_arguments)
+    run_experiment([1])
