@@ -22,8 +22,8 @@ import pandas as pd
 from random import uniform
 
 from pysave.visualization.data_visualization \
-    import plot_trajectories, plot_amsterdam
-from pysave.model.model import SavingsCore_exploit as Model
+    import plot_trajectories, plot_tau_smean
+from pysave.model.model import SavingsCore_thebest as Model
 from pymofa.experiment_handling \
     import experiment_handling, even_time_series_spacing
 
@@ -32,8 +32,8 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     """
     Set up the model for various parameters and determine
     which parts of the output are saved where.
-    Output is saved in pickled dictionaries including the 
-    initial values, parameters and convergence state and time 
+    Output is saved in pickled dictionaries including the
+    initial values, parameters and convergence state and time
     for each run.
 
     Parameters:
@@ -61,15 +61,14 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     # building initial conditions
 
     # network:
-    n = 30
+    n = 100
     k = 3
     if test:
         n = 30
         k = 3
 
-    p = float(k) / n
     while True:
-        net = nx.erdos_renyi_graph(n, p)
+        net = nx.barabasi_albert_graph(n, k)
         if len(list(net)) > 1:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
@@ -80,7 +79,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 1000
+    t_1 = 2000
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -216,7 +215,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X1'
+    folder = 'X2'
 
     # make sure, testing output goes to its own folder:
 
@@ -233,10 +232,10 @@ def run_experiment(argv):
     create parameter combinations and index
     """
 
-    taus = [round(x, 5) for x in list(np.linspace(1., 100., 2))]
-    phis = [round(x, 5) for x in list(np.linspace(0., 1., 2))]
-    epss = [round(x, 5) for x in list(np.linspace(0., 0.01, 2))]
-    tau, phi, eps = [1., 10., 100.], [.1, .5, .9], [0., .01]
+    taus = [round(x, 5) for x in list(np.linspace(1., 50., 30))]
+    phis = [0]
+    epss = [0]
+    tau, phi, eps = [1., 10., 100.], [0], [0]
 
     if test:
         param_combs = list(it.product(tau, phi, eps, [test]))
@@ -301,7 +300,8 @@ def run_experiment(argv):
     # local mode: plotting only
     if mode == 1:
 
-        plot_trajectories(save_path_res, name1, None, None)
+        #plot_trajectories(save_path_res, name1, None, None)
+        plot_tau_smean(save_path_res, name1, None, None)
 
         return 1
 

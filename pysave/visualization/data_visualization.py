@@ -682,17 +682,56 @@ def plot_observables(t_data_in, c_data_in, loc,
         plt.close()
 
 
-def plot_phase_transition(loc, name, ):
+def plot_tau_smean(loc, name, params, indices):
 
     if not loc.endswith('/'):
         loc += '/'
 
-    with open(loc + name) as target:
-        tmp = np.load(target)
-    tmp = tmp.xs(0.5, level='alpha')[['<mean_remaining_resource_fraction>']]
+    print('plotting trajectories')
 
-    tmp.unstack('N').plot()
-    plt.show()
+    tmp = np.load(loc+name)
+    tmp = tmp.replace([np.inf, -np.inf], np.nan)
+    dataframe = tmp.where(tmp < 10**300, np.nan).xs(level=['eps'], key=[0.0])
+
+    # get the values of the first two index levels
+    ivals = dataframe.index.levels[0]
+    jvals = dataframe.index.levels[1]
+
+    # get the values of the last index level
+    # which will be transformed into colums by unstack()
+    columns = dataframe.index.levels[-1]
+
+    for j, jval in enumerate(jvals):
+
+        # create figure with enough space for ivals*columns plots
+        fig = plt.figure(figsize=(6, 6))
+        si = []
+        for i, ival in enumerate(ivals):
+
+            # extract the mean and std data for each of the values of the first index
+            subset = dataframe.loc[(ival, jval,),
+                                   'mean_trajectory'].unstack(
+                'observables').dropna(axis=0, how='any')
+            subset_errors = dataframe.loc[(ival, jval,),
+                                          'sem_trajectory'].unstack(
+                'observables').dropna(axis=0, how='any')
+            #column = 7 # is this savings rate?
+            subset_j = subset.loc[:, 's']
+            si.append(subset_j.values[-1])
+            subset_j_errors = subset_errors.loc[:, 's']
+
+            # add a subplot to the list of axes
+            # plot mean e_trajectory and insequrity interval
+            # also mark the area in which the mean data was negative
+        plt.plot(ivals,si )
+        plt.xlabel(r'$\tau$')
+        plt.ylabel(r'$s_i$')
+        # adjust the grid layout to avoid overlapping plots and save the figure
+        print('saving figure {:5.2f}'.format(jval))
+        fig.tight_layout()
+        fig.savefig(loc+'tau_s_figure_{:5.2f}.pdf'.format(jval))
+        fig.clf()
+        plt.close()
 
 if __name__ == '__main__':
     loc = sys.argv[1]

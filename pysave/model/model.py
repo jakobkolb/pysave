@@ -12,7 +12,7 @@ class SavingsCore_exploit:
 
     def __init__(self, adjacency=None, savings_rate=None,
                  capital=None,
-                 tau=0.8, phi=.7, eps=0.05,
+                 tau=0.8, phi=0.0, eps=0.05,
                  P=1., b=1., d=0.06, pi=1./2., r_b=0,
                  test=False):
 
@@ -468,7 +468,7 @@ class SavingsCore_voter:
 
     def __init__(self, adjacency=None, savings_rate=None,
                  capital=None,
-                 tau=0.8, phi=.7, eps=0.05,
+                 tau=0.8, phi=0.0, eps=0.00,
                  P=1., b=1., d=0.06, pi=1./2., r_b=0,
                  test=False):
 
@@ -854,7 +854,7 @@ class SavingsCore_thebest:
 
     def __init__(self, adjacency=None, savings_rate=None,
                  capital=None,
-                 tau=0.8, phi=.7, eps=0.05,
+                 tau=0.8, phi=0.0, eps=0.00,
                  P=1., b=1., d=0.06, pi=1./2., r_b=0,
                  test=False):
 
@@ -1147,8 +1147,9 @@ class SavingsCore_thebest:
 
             # choose random neighbor of candidate
             if len(neighbors) > 0:
-                neighbor = neighbors[np.argmax((1. - self.savings_rate[neighbors]) *\
-                                       self.income[neighbors])]
+                func_vals = (1. - self.savings_rate[neighbors]) *\
+                                       self.income[neighbors]
+                neighbor = neighbors[np.argmax(func_vals)]
             if neighbor < self.n:
                 # update candidate found (GOOD)
                 break
@@ -1312,4 +1313,4 @@ if __name__ == '__main__':
     plt.colorbar(sc, ax=ax4)
 
     fig.tight_layout()
-    plt.savefig('example_trajectory_best1.png')
+    plt.savefig('example_trajectory_best_nonoise_tau1000.png')
