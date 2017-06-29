@@ -706,6 +706,7 @@ def plot_tau_smean(loc, name, params, indices):
         # create figure with enough space for ivals*columns plots
         fig = plt.figure(figsize=(6, 6))
         si = []
+        si_errs=[]
         for i, ival in enumerate(ivals):
 
             # extract the mean and std data for each of the values of the first index
@@ -719,11 +720,21 @@ def plot_tau_smean(loc, name, params, indices):
             subset_j = subset.loc[:, 's']
             si.append(subset_j.values[-1])
             subset_j_errors = subset_errors.loc[:, 's']
-
+            si_errs.append(subset_j_errors.values[-1])
             # add a subplot to the list of axes
             # plot mean e_trajectory and insequrity interval
             # also mark the area in which the mean data was negative
-        plt.plot(ivals,si )
+        plt.plot(ivals,si, color='blue')
+        si, si_errs = np.array(si), np.array(si_errs)
+        plt.fill_between(ivals,
+                         si - si_errs,
+                         si + si_errs,
+                         color='blue',
+                         alpha=0.1)
+        plt.plot(ivals, si - si_errs, color='blue',
+                                          alpha=0.3)
+        plt.plot(ivals, si + si_errs, color='blue',
+                                          alpha=0.3)
         plt.xlabel(r'$\tau$')
         plt.ylabel(r'$s_i$')
         # adjust the grid layout to avoid overlapping plots and save the figure
