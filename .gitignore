@@ -65,11 +65,14 @@ target/
 .*.swp
 
 #output data
-PyDivestment/divestdata/*
+experiments/output_data/*
+
+cluster_push.sh
+cluster_pull.sh
 
 #pymofa and cyexploit
 cyexploit
-PyDivestment/pymofa
+pymofa
 
 #output files:
 *.pdf
@@ -86,3 +89,4 @@ PyDivestment/pymofa
 
 #pycharm project files
 .idea/
+
