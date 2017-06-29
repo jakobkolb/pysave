@@ -67,8 +67,8 @@ target/
 #output data
 experiments/output_data/*
 
-cluster_tools/cluster_push.sh
-cluster_tools/cluster_pull.sh
+cluster_tools/ycluster_push.sh
+cluster_tools/ycluster_pull.sh
 
 #pymofa and cyexploit
 cyexploit
