@@ -79,7 +79,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 2000
+    t_1 = 5000
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -232,7 +232,7 @@ def run_experiment(argv):
     create parameter combinations and index
     """
 
-    taus = [round(x, 5) for x in list(np.linspace(1., 20., 5))]
+    taus = [round(x, 5) for x in list(np.linspace(1., 50., 100))]
     phis = [0]
     epss = [0]
     tau, phi, eps = [1., 10., 100.], [0], [0]
@@ -288,7 +288,7 @@ def run_experiment(argv):
 
     # cluster mode: computation and post processing
     if mode == 0:
-        sample_size = 2 if not test else 2
+        sample_size = 50 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
@@ -299,8 +299,8 @@ def run_experiment(argv):
         return 1
     # local mode: plotting only
     if mode == 1:
-
-        plot_trajectories(save_path_res, name1, None, None)
+        #plot_trajectories(save_path_res, name1, None, None)
+        print save_path_res, name1
         plot_tau_smean(save_path_res, name1, None, None)
 
         return 1
