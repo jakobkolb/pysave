@@ -22,7 +22,7 @@ import pandas as pd
 from random import uniform
 
 from pysave.visualization.data_visualization \
-    import plot_trajectories, plot_tau_smean
+    import plot_trajectories, plot_tau_smean,plot_tau_ymean
 from pysave.model.model import SavingsCore_thebest as Model
 from pymofa.experiment_handling \
     import experiment_handling, even_time_series_spacing
@@ -68,7 +68,8 @@ def RUN_FUNC(tau, phi, eps, test, filename):
         k = 3
 
     while True:
-        net = nx.barabasi_albert_graph(n, k)
+        #net = nx.barabasi_albert_graph(n, k)
+        net = nx.complete_graph(n)
         if len(list(net)) > 1:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
@@ -215,7 +216,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X2'
+    folder = 'X2_log'
 
     # make sure, testing output goes to its own folder:
 
@@ -232,7 +233,7 @@ def run_experiment(argv):
     create parameter combinations and index
     """
 
-    taus = [round(x, 5) for x in list(np.linspace(1., 50., 100))]
+    taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
     phis = [0]
     epss = [0]
     tau, phi, eps = [1., 10., 100.], [0], [0]
@@ -282,26 +283,34 @@ def run_experiment(argv):
                                      for f in fnames]).sortlevel(level=0).reset_index()
            }
 
+    name4 = name + '_all_si'
+    eva4 = {"all_si":
+                lambda fnames: pd.join([np.load(f)["final state"]
+                                          for f in fnames])
+            }
+
     """
     run computation and/or post processing and/or plotting
     """
 
     # cluster mode: computation and post processing
     if mode == 0:
-        sample_size = 50 if not test else 2
+        sample_size = 100 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
         handle.resave(eva1, name1)
         handle.resave(eva2, name2)
+        handle.resave(eva4, name4)
         handle.resave(cf3, name3)
         return 1
     # local mode: plotting only
     if mode == 1:
         #plot_trajectories(save_path_res, name1, None, None)
-        print save_path_res, name1
-        plot_tau_smean(save_path_res, name1, None, None)
+        #print save_path_res, name1
+        #plot_tau_smean(save_path_res, name1, None, None)
+        #plot_tau_ymean(save_path_res, name1, None, None)
 
         return 1
 

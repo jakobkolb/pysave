@@ -744,6 +744,69 @@ def plot_tau_smean(loc, name, params, indices):
         fig.clf()
         plt.close()
 
+
+def plot_tau_ymean(loc, name, params, indices):
+
+    if not loc.endswith('/'):
+        loc += '/'
+
+    print('plotting trajectories')
+
+    tmp = np.load(loc+name)
+    tmp = tmp.replace([np.inf, -np.inf], np.nan)
+    dataframe = tmp.where(tmp < 10**300, np.nan).xs(level=['eps'], key=[0.0])
+
+    # get the values of the first two index levels
+    ivals = dataframe.index.levels[0]
+    jvals = dataframe.index.levels[1]
+
+    # get the values of the last index level
+    # which will be transformed into colums by unstack()
+    columns = dataframe.index.levels[-1]
+
+    for j, jval in enumerate(jvals):
+
+        # create figure with enough space for ivals*columns plots
+        fig = plt.figure(figsize=(6, 6))
+        si = []
+        si_errs=[]
+        for i, ival in enumerate(ivals):
+
+            # extract the mean and std data for each of the values of the first index
+            subset = dataframe.loc[(ival, jval,),
+                                   'mean_trajectory'].unstack(
+                'observables').dropna(axis=0, how='any')
+            subset_errors = dataframe.loc[(ival, jval,),
+                                          'sem_trajectory'].unstack(
+                'observables').dropna(axis=0, how='any')
+            #column = 7 # is this savings rate?
+            subset_j = subset.loc[:, 'C']
+            si.append(subset_j.values[-1])
+            subset_j_errors = subset_errors.loc[:, 's']
+            si_errs.append(subset_j_errors.values[-1])
+            # add a subplot to the list of axes
+            # plot mean e_trajectory and insequrity interval
+            # also mark the area in which the mean data was negative
+        plt.plot(ivals,si, color='blue')
+        si, si_errs = np.array(si), np.array(si_errs)
+        plt.fill_between(ivals,
+                         si - si_errs,
+                         si + si_errs,
+                         color='blue',
+                         alpha=0.1)
+        plt.plot(ivals, si - si_errs, color='blue',
+                                          alpha=0.3)
+        plt.plot(ivals, si + si_errs, color='blue',
+                                          alpha=0.3)
+        plt.xlabel(r'$\tau$')
+        plt.ylabel(r'$\bar{C}$')
+        # adjust the grid layout to avoid overlapping plots and save the figure
+        print('saving figure {:5.2f}'.format(jval))
+        fig.tight_layout()
+        fig.savefig(loc+'tau_C_figure_{:5.2f}.pdf'.format(jval))
+        fig.clf()
+        plt.close()
+
 if __name__ == '__main__':
     loc = sys.argv[1]
     plot_trajectories(loc, 'phi')
