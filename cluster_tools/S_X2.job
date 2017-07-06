@@ -20,4 +20,4 @@ echo "$SLURM_NTASKS tasks"
 echo "_______________________________________________"
 
 cd ../experiments
-srun -n $SLURM_NTASKS python X2_thebest.py 0
+srun -n $SLURM_NTASKS --mpi=pmi2 python X2_thebest.py 0
