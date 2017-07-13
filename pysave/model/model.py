@@ -1702,7 +1702,6 @@ class SavingsCore_thebest_all:
         self.neighbors = adjacency
         # investment_decisions as indices of possible_opinions
         self.savings_rate = np.array(savings_rate_)
-        print  self.savings_rate
 
         # members of ALL household = population
         self.P = P
@@ -1840,7 +1839,7 @@ class SavingsCore_thebest_all:
         P = x0[-1]
         K = sum(capital)
 
-        assert K >= 0, 'negative clean capital'
+        assert K >= 0, 'negative capital'
 
         self.w = self.b * self.pi * P ** (self.pi - 1) * K ** self.kappa
         self.r = self.b * self.kappa * P ** self.pi * K ** (self.kappa - 1)
@@ -2047,7 +2046,7 @@ if __name__ == '__main__':
 
     capital = np.ones(n)
 
-    input_parameters = {'tau': 200, 'phi': 0., 'eps': 0.0, 'b': 1., 'P': 1, 'd': 0.40}
+    input_parameters = {'tau': 5, 'phi': 0., 'eps': 0.0, 'b': 1., 'P': 1, 'd': 0.05}
     init_conditions = (adjacency_matrix, savings_rates, capital)
 
     model = SavingsCore_thebest_all(*init_conditions,
@@ -2063,7 +2062,7 @@ if __name__ == '__main__':
     tmax = 2000.
     model.run(t_max=tmax)
     trajectory = model.get_e_trajectory()
-    with open('trajectory3', 'wb') as dumpfile:
+    with open('trajectory2', 'wb') as dumpfile:
         cp.dump(trajectory, dumpfile)
 
 
@@ -2082,7 +2081,7 @@ if __name__ == '__main__':
     ax1 = fig.add_subplot(221)
     trajectory['r'].plot(ax=ax1, style=colors)
     ax1.plot(range(int(tmax)),
-             np.repeat(0.40, (int(tmax))))
+             np.repeat(0.05, (int(tmax))))
     ax1.set_title('last r= %s, last w= %s' % (trajectory['r'].values[-1], trajectory['wage'].values[-1]))
 
     ax2 = fig.add_subplot(223)
@@ -2103,7 +2102,7 @@ if __name__ == '__main__':
     plt.colorbar(sc, ax=ax4)
 
     fig.tight_layout()
-    plt.savefig('best_nonoise_tau200_fully_d40_5.png')
+    plt.savefig('best_nonoise_tau200_fully_d05.png')
 
 
     # Initialize Model
