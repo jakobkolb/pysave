@@ -1258,8 +1258,8 @@ class SavingsCore_thebest_ext:
         # turn output for debugging on or off
         self.debug = test
         # toggle e_trajectory output
-        self.e_trajectory_output = False
-        self.m_trajectory_output = False
+        self.e_trajectory_output = True
+        self.m_trajectory_output = True
         # toggle whether to run full time or only until consensus
         self.run_full_time = True
 
@@ -1559,6 +1559,8 @@ class SavingsCore_thebest_ext:
                                  neighbors):
         if self.fitness(neighbor)>self.fitness(candidate):
             self.savings_rate[candidate] = self.savings_rate[neighbor] + np.random.uniform(-self.eps, self.eps)
+            while self.savings_rate[candidate] >1 or self.savings_rate[candidate] <0:
+                self.savings_rate[candidate] = self.savings_rate[neighbor] + np.random.uniform(-self.eps, self.eps)
         return 0
 
     def detect_consensus_state(self, d_opinions):
@@ -1587,7 +1589,7 @@ class SavingsCore_thebest_ext:
                    'wage',
                    'r',
                    's',
-                   'capital share of gdp',
+                   'capital',
                    'labor share of gdp',
                    'C',
                    'P',
@@ -1607,10 +1609,10 @@ class SavingsCore_thebest_ext:
         element = [self.t,
                    self.w,
                    self.r,
-                   sum(self.savings_rate * self.income) / sum(self.income), # weighted avg savingsrate
-                   sum(self.capital) * self.r,
+                   self.savings_rate.copy(),
+                   self.capital.copy(),
                    self.P * self.w,
-                   sum(self.income * (1 - self.savings_rate)),
+                   self.income.copy() * (1 - self.savings_rate.copy()),
                    self.P,
                    self.Y,
                    self.converged,
@@ -2046,7 +2048,7 @@ if __name__ == '__main__':
 
     capital = np.ones(n)
 
-    input_parameters = {'tau': 5, 'phi': 0., 'eps': 0.0, 'b': 1., 'P': 1, 'd': 0.05}
+    input_parameters = {'tau': 500, 'phi': 0., 'eps': 0.0, 'b': 1., 'P': 1, 'd': 0.05}
     init_conditions = (adjacency_matrix, savings_rates, capital)
 
     model = SavingsCore_thebest_all(*init_conditions,
@@ -2059,10 +2061,10 @@ if __name__ == '__main__':
     model.debug = True
 
     # Run Model
-    tmax = 2000.
+    tmax = 200000.
     model.run(t_max=tmax)
     trajectory = model.get_e_trajectory()
-    with open('trajectory2', 'wb') as dumpfile:
+    with open('trajectory_noise1', 'wb') as dumpfile:
         cp.dump(trajectory, dumpfile)
 
 
