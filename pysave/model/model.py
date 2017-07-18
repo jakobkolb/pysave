@@ -1245,7 +1245,8 @@ class SavingsCore_thebest_ext:
                  capital=None,
                  tau=0.8, phi=0.0, eps=0.01,
                  P=1., b=1., d=0.06, pi=1./2., r_b=0,
-                 test=False):
+                 test=False,e_trajectory_output=True,
+                 m_trajectory_output=True):
 
         # Modes:
         #  1: only economy,
@@ -1258,8 +1259,8 @@ class SavingsCore_thebest_ext:
         # turn output for debugging on or off
         self.debug = test
         # toggle e_trajectory output
-        self.e_trajectory_output = True
-        self.m_trajectory_output = True
+        self.e_trajectory_output = e_trajectory_output
+        self.m_trajectory_output = m_trajectory_output
         # toggle whether to run full time or only until consensus
         self.run_full_time = True
 
@@ -1315,9 +1316,6 @@ class SavingsCore_thebest_ext:
         # investment_decisions as indices of possible_opinions
         self.savings_rate = np.array(savings_rate)
 
-        # members of ALL household = population
-        self.P = P
-
         # household capital in clean capital
         if capital is None:
             self.capital = np.ones(self.n)
@@ -1342,7 +1340,9 @@ class SavingsCore_thebest_ext:
         # total capital (supply)
         self.K = sum(self.capital)
         # total labor (supply)
-        self.P = np.random.normal(P, P*0.05, self.n)
+        self.P = np.random.normal(float(P)/self.n, (float(P)/self.n)*self.phi, self.n)
+        while any(self.P < 0):
+            self.P = np.random.normal(float(P)/ self.n, (float(P) / self.n) * self.phi, self.n)
         # Production
         self.Y = 0.
         # wage
@@ -1458,7 +1458,7 @@ class SavingsCore_thebest_ext:
 
         self.K = K
 
-        self.income = (self.r * self.capital + self.w * P / self.n)
+        self.income = (self.r * self.capital + self.w * self.P)
 
         assert all(self.income > 0), \
             'income is negative, K: {} \n income: \n {}'.format(K, self.income)
@@ -1533,11 +1533,12 @@ class SavingsCore_thebest_ext:
             neighbors = self.neighbors[:, candidate].nonzero()[0]
 
 
-            # choose random neighbor of candidate
+            # choose best neighbor of candidate
             if len(neighbors) > 0:
                 func_vals = (1. - self.savings_rate[neighbors]) *\
                                        self.income[neighbors]
                 neighbor = neighbors[np.argmax(func_vals)]
+
             if neighbor < self.n:
                 # update candidate found (GOOD)
                 break
@@ -1559,7 +1560,7 @@ class SavingsCore_thebest_ext:
                                  neighbors):
         if self.fitness(neighbor)>self.fitness(candidate):
             self.savings_rate[candidate] = self.savings_rate[neighbor] + np.random.uniform(-self.eps, self.eps)
-            while self.savings_rate[candidate] >1 or self.savings_rate[candidate] <0:
+            while (self.savings_rate[candidate] > 1) or (self.savings_rate[candidate] < 0):
                 self.savings_rate[candidate] = self.savings_rate[neighbor] + np.random.uniform(-self.eps, self.eps)
         return 0
 
@@ -1598,10 +1599,10 @@ class SavingsCore_thebest_ext:
                    ]
         self.e_trajectory.append(element)
 
-        self.w = self.b * self.pi * self.P ** (self.pi - 1) * self.K ** self.kappa
-        self.r = self.b * self.kappa * self.P ** self.pi * self.K ** (self.kappa - 1)
+        self.w = self.b * self.pi * sum(self.P) ** (self.pi - 1) * self.K ** self.kappa
+        self.r = self.b * self.kappa * sum(self.P) ** self.pi * self.K ** (self.kappa - 1)
 
-        self.income = (self.r * self.capital + self.w * self.P / self.n)
+        self.income = (self.r * self.capital + self.w * self.P)
 
         self.update_e_trajectory()
 
@@ -1611,7 +1612,7 @@ class SavingsCore_thebest_ext:
                    self.r,
                    self.savings_rate.copy(),
                    self.capital.copy(),
-                   self.P * self.w,
+                   sum(self.P) * self.w,
                    self.income.copy() * (1 - self.savings_rate.copy()),
                    self.P,
                    self.Y,
@@ -2048,10 +2049,11 @@ if __name__ == '__main__':
 
     capital = np.ones(n)
 
-    input_parameters = {'tau': 500, 'phi': 0., 'eps': 0.0, 'b': 1., 'P': 1, 'd': 0.05}
+    input_parameters = {'tau': 500, 'phi': 0.01, 'eps': 0.01, 'b': 1., 'P': 1.,
+                        'd': 0.50, 'pi': 0.5}
     init_conditions = (adjacency_matrix, savings_rates, capital)
 
-    model = SavingsCore_thebest_all(*init_conditions,
+    model = SavingsCore_thebest_ext(*init_conditions,
                                 **input_parameters)
 
     # Turn off economic trajectory
@@ -2064,7 +2066,7 @@ if __name__ == '__main__':
     tmax = 200000.
     model.run(t_max=tmax)
     trajectory = model.get_e_trajectory()
-    with open('trajectory_noise1', 'wb') as dumpfile:
+    with open('trajectory_Ldist_tau500_phi01_eps01_d50', 'wb') as dumpfile:
         cp.dump(trajectory, dumpfile)
 
 
@@ -2104,7 +2106,7 @@ if __name__ == '__main__':
     plt.colorbar(sc, ax=ax4)
 
     fig.tight_layout()
-    plt.savefig('best_nonoise_tau200_fully_d05.png')
+    plt.savefig('best_Ldist_tau500_fully_d05.png')
 
 
     # Initialize Model

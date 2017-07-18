@@ -23,7 +23,7 @@ from random import uniform
 
 from pysave.visualization.data_visualization \
     import plot_trajectories, plot_tau_smean,plot_tau_ymean
-from pysave.model.model import SavingsCore_thebest as Model
+from pysave.model.model import SavingsCore_thebest_ext as Model
 from pymofa.experiment_handling \
     import experiment_handling, even_time_series_spacing
 
@@ -57,13 +57,15 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     input_params = {'phi': phi, 'tau': tau,
                     'eps': eps, 'test': test,
-                    'd': 0.5}
+                    'e_trajectory_output': False,
+                    'm_trajectory_output': False,
+                    'pi': 0.5}
 
     # building initial conditions
 
     # network:
     n = 100
-    k = 5
+    k = 3
     if test:
         n = 30
         k = 3
@@ -81,7 +83,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 50000
+    t_1 = 5000 * tau
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -111,40 +113,14 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     if exit_status in [0, 1] or test:
         # even and safe macro trajectory
-        res["trajectory"] = \
-            even_time_series_spacing(m.get_e_trajectory(), 401, 0., t_max)
+        #res["trajectory"] = \
+        #    even_time_series_spacing(m.get_e_trajectory(), 401, 0., t_max)
         # save micro data
         res["adjacency"] = m.neighbors
         res["final state"] = pd.DataFrame(data=np.array([m.savings_rate,
                                                 m.capital,
-                                                m.income]).transpose(),
-                                          columns=['s', 'k', 'i'])
-        # find connected components and their size
-        g = nx.from_numpy_matrix(m.neighbors)
-        cc = sorted(nx.connected_components(g), key=len)
-        cluster_sizes = []
-        for l in cc:
-            cs = 0
-            for n in l:
-                cs += 1
-            cluster_sizes.append(cs)
-        res["cluster sizes"] = pd.DataFrame(data=cluster_sizes, columns=['cluster sizes'])
-        # compute welfare and save
-
-        def gini(x):
-            # (Warning: This is a concise implementation, but it is O(n**2)
-            # in time and memory, where n = len(x).  *Don't* pass in huge
-            # samples!)
-
-            # Mean absolute difference
-            mad = np.abs(np.subtract.outer(x, x)).mean()
-            # Relative mean absolute difference
-            rmad = mad / np.mean(x)
-            # Gini coefficient
-            g = 0.5 * rmad
-            return g
-
-        #res["welfare"] = np.mean(m.income) * (1. - gini(m.income))
+                                                m.income, m.P, m.consumption]).transpose(),
+                                          columns=['s', 'k', 'i', 'L', 'C'])
 
         # compute national savings rate and save
         res["savings_rate"] = sum(m.income * m.savings_rate) / sum(m.income)
@@ -217,7 +193,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X2log_delta50'
+    folder = 'X6_Ldistphi01_bara_q'
 
     # make sure, testing output goes to its own folder:
 
@@ -235,8 +211,8 @@ def run_experiment(argv):
     """
 
     taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
-    phis = [0]
-    epss = [0]
+    phis = [0.01]
+    epss = [0.] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
 
     if test:
@@ -252,38 +228,6 @@ def run_experiment(argv):
 
     name = 'parameter_scan'
 
-    name1 = name + '_trajectory'
-    eva1 = {"mean_trajectory":
-            lambda fnames: pd.concat([np.load(f)["trajectory"]
-                                      for f in fnames]).groupby(
-                    level=0).mean(),
-            "sem_trajectory":
-            lambda fnames: pd.concat([np.load(f)["trajectory"]
-                                      for f in fnames]).groupby(
-                    level=0).std()
-            }
-
-    name2 = name + '_convergence'
-    eva2 = {'welfare_mean':
-            lambda fnames: np.nanmean([np.load(f)["welfare"]
-                                       for f in fnames]),
-            'savings_rate_mean':
-            lambda fnames: np.nanmean([np.load(f)["savings_rate"]
-                                       for f in fnames]),
-            'welfare_std':
-            lambda fnames: np.std([np.load(f)["welfare"]
-                                   for f in fnames]),
-            'savings_rate_std':
-            lambda fnames: np.std([np.load(f)["savings_rate"]
-                                   for f in fnames])
-            }
-
-    name3 = name + '_cluster_sizes'
-    cf3 = {'cluster sizes':
-           lambda fnames: pd.concat([np.load(f)["cluster sizes"]
-                                     for f in fnames]).sortlevel(level=0).reset_index()
-           }
-
     name4 = name + '_all_si'
     eva4 = {"all_si":
                 lambda fnames: [np.load(f)["final state"]
@@ -296,15 +240,12 @@ def run_experiment(argv):
 
     # cluster mode: computation and post processing
     if mode == 0:
-        sample_size = 100 if not test else 2
+        sample_size = 200 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
-        handle.resave(eva1, name1)
-        #handle.resave(eva2, name2)
         handle.resave(eva4, name4)
-        #handle.resave(cf3, name3)
         return 1
     # local mode: plotting only
     if mode == 1:
@@ -312,8 +253,7 @@ def run_experiment(argv):
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
-        #handle.resave(eva1, name1)
-        #handle.resave(eva2, name2)
+
         handle.resave(eva4, name4)
         #handle.resave(cf3, name3)
         #plot_trajectories(save_path_res, name1, None, None)

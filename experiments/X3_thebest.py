@@ -56,21 +56,22 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     # Parameters:
 
     input_params = {'phi': phi, 'tau': tau,
-                    'eps': eps, 'test': test
-                    }
+                    'eps': eps, 'test': test,
+                    'e_trajectory_output': False,
+                    'm_trajectory_output': False}
 
     # building initial conditions
 
     # network:
     n = 100
-    k = 5
+    k = 3
     if test:
         n = 30
         k = 3
 
     while True:
-        net = nx.barabasi_albert_graph(n, k)
-        #net = nx.complete_graph(n)
+        #net = nx.barabasi_albert_graph(n, k)
+        net = nx.complete_graph(n)
         if len(list(net)) > 1:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
@@ -81,7 +82,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 50000
+    t_1 = 5000 * tau
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -111,8 +112,8 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     if exit_status in [0, 1] or test:
         # even and safe macro trajectory
-        res["trajectory"] = \
-            even_time_series_spacing(m.get_e_trajectory(), 401, 0., t_max)
+        #res["trajectory"] = \
+        #    even_time_series_spacing(m.get_e_trajectory(), 401, 0., t_max)
         # save micro data
         res["adjacency"] = m.neighbors
         res["final state"] = pd.DataFrame(data=np.array([m.savings_rate,
@@ -191,7 +192,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X3log'
+    folder = 'X3_Ldistphi05_fully_eps05_q'
 
     # make sure, testing output goes to its own folder:
 
@@ -209,8 +210,8 @@ def run_experiment(argv):
     """
 
     taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
-    phis = [0]
-    epss = 0.01 # [round(0.01, 5)]
+    phis = [0.05]
+    epss = [0.05] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
 
     if test:
@@ -225,38 +226,6 @@ def run_experiment(argv):
     """
 
     name = 'parameter_scan'
-
-    name1 = name + '_trajectory'
-    eva1 = {"mean_trajectory":
-            lambda fnames: pd.concat([np.load(f)["trajectory"]
-                                      for f in fnames]).groupby(
-                    level=0).mean(),
-            "sem_trajectory":
-            lambda fnames: pd.concat([np.load(f)["trajectory"]
-                                      for f in fnames]).groupby(
-                    level=0).std()
-            }
-
-    name2 = name + '_convergence'
-    eva2 = {'welfare_mean':
-            lambda fnames: np.nanmean([np.load(f)["welfare"]
-                                       for f in fnames]),
-            'savings_rate_mean':
-            lambda fnames: np.nanmean([np.load(f)["savings_rate"]
-                                       for f in fnames]),
-            'welfare_std':
-            lambda fnames: np.std([np.load(f)["welfare"]
-                                   for f in fnames]),
-            'savings_rate_std':
-            lambda fnames: np.std([np.load(f)["savings_rate"]
-                                   for f in fnames])
-            }
-
-    name3 = name + '_cluster_sizes'
-    cf3 = {'cluster sizes':
-           lambda fnames: pd.concat([np.load(f)["cluster sizes"]
-                                     for f in fnames]).sortlevel(level=0).reset_index()
-           }
 
     name4 = name + '_all_si'
     eva4 = {"all_si":
@@ -275,10 +244,7 @@ def run_experiment(argv):
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
-        handle.resave(eva1, name1)
-        #handle.resave(eva2, name2)
         handle.resave(eva4, name4)
-        #handle.resave(cf3, name3)
         return 1
     # local mode: plotting only
     if mode == 1:
@@ -286,8 +252,7 @@ def run_experiment(argv):
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
-        #handle.resave(eva1, name1)
-        #handle.resave(eva2, name2)
+
         handle.resave(eva4, name4)
         #handle.resave(cf3, name3)
         #plot_trajectories(save_path_res, name1, None, None)

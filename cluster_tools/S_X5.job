@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80
 #SBATCH --qos=short
-#SBATCH --job-name=XS1
-#SBATCH --output=%A_XS1_%a_.out
-#SBATCH --error=%A_XS1_%a_.err
+#SBATCH --job-name=X5_Ldistphi01_fully_q
+#SBATCH --output=%A_X5_%a_.out
+#SBATCH --error=%A_X5_%a_.err
 #SBATCH --account=copan
 #SBATCH --time=0-24
 #SBATCH --nodes=4
@@ -19,5 +19,5 @@ echo "SLURM JOB ID: $SLURM_JOBID"
 echo "$SLURM_NTASKS tasks"
 echo "_______________________________________________"
 
-#cd ../experiments
-#srun -n $SLURM_NTASKS --mpi=pmi2 python X2_thebest.py 0
+cd ../experiments
+srun -n $SLURM_NTASKS --mpi=pmi2 python X5.py 0
