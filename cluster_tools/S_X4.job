@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80
 #SBATCH --qos=short
-#SBATCH --job-name=X4_Ldistphi05_bara_eps05_q
+#SBATCH --job-name=X4
 #SBATCH --output=%A_X4_%a_.out
 #SBATCH --error=%A_X4_%a_.err
 #SBATCH --account=copan

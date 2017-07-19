@@ -192,7 +192,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X3_Ldistphi05_fully_eps05_q'
+    folder = 'X3_Ldistphi01_fully_eps01_q'
 
     # make sure, testing output goes to its own folder:
 
@@ -210,8 +210,8 @@ def run_experiment(argv):
     """
 
     taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
-    phis = [0.05]
-    epss = [0.05] # [round(0.01, 5)]
+    phis = [0.01]
+    epss = [0.01] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
 
     if test:
@@ -248,7 +248,7 @@ def run_experiment(argv):
         return 1
     # local mode: plotting only
     if mode == 1:
-        sample_size = 100 if not test else 2
+        sample_size = 200 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)

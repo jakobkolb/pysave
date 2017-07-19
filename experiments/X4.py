@@ -192,7 +192,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X4_Ldistphi05_bara_eps05_q'
+    folder = 'X4_Ldistphi01_bara_eps01_q'
 
     # make sure, testing output goes to its own folder:
 
@@ -210,8 +210,8 @@ def run_experiment(argv):
     """
 
     taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
-    phis = [0.05]
-    epss = [0.05] # [round(0.01, 5)]
+    phis = [0.01]
+    epss = [0.01] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
 
     if test:
