@@ -118,9 +118,11 @@ def RUN_FUNC(tau, phi, eps, test, filename):
         # save micro data
         res["adjacency"] = m.neighbors
         res["final state"] = pd.DataFrame(data=np.array([m.savings_rate,
-                                                m.capital,
-                                                m.income, m.P, m.consumption]).transpose(),
-                                          columns=['s', 'k', 'i', 'L', 'C'])
+                                                         m.capital,
+                                                         m.income, m.P, m.consumption,
+                                                         m.w, m.r, m.Y]).transpose(),
+                                          columns=['s', 'k', 'i', 'L', 'C',
+                                                   'w', 'r', 'Y'])
 
         # compute national savings rate and save
         res["savings_rate"] = sum(m.income * m.savings_rate) / sum(m.income)
@@ -193,7 +195,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X6_Ldistphi01_bara_q'
+    folder = 'X6_Ldistphi10_bara_eps01_q_longer'
 
     # make sure, testing output goes to its own folder:
 
@@ -210,9 +212,9 @@ def run_experiment(argv):
     create parameter combinations and index
     """
 
-    taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
-    phis = [0.01]
-    epss = [0.] # [round(0.01, 5)]
+    taus = [round(x, 5) for x in list(np.logspace(0, 4, 100))]
+    phis = [0.10]
+    epss = [0.01] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
 
     if test:
@@ -233,7 +235,11 @@ def run_experiment(argv):
                 lambda fnames: [np.load(f)["final state"]
                                           for f in fnames]
             }
-
+    name5 = name + 'nat_sav'
+    eva5 = {"nat_sav":
+                lambda fnames: [np.load(f)["savings_rate"]
+                                for f in fnames]
+            }
     """
     run computation and/or post processing and/or plotting
     """
@@ -246,6 +252,7 @@ def run_experiment(argv):
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
         handle.resave(eva4, name4)
+        handle.resave(eva5, name5)
         return 1
     # local mode: plotting only
     if mode == 1:
