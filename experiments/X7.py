@@ -52,25 +52,24 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     """
 
     # Parameters:
-    input_params = {'phi': phi, 'tau': tau,
+    input_params = {'phi': phi, 'tau': tau,   'd': 0.20,
                     'eps': eps, 'test': test,
                     'e_trajectory_output': False,
-                    'm_trajectory_output': False,
-                    'pi': 0.5}
+                    'm_trajectory_output': False}
 
     # building initial conditions
 
     # network:
-    n = 300
-    k = 3
+    n = 100
+    k = 2
     if test:
         n = 30
         k = 3
 
     while True:
-        #net = nx.barabasi_albert_graph(n, k)
-        net = nx.complete_graph(n)
-        if len(list(net)) > 1:
+        net = nx.barabasi_albert_graph(n, k)
+        #net = nx.watts_strogatz_graph(n,k,0.3)
+        if len(max(nx.connected_component_subgraphs(net), key=len).nodes()) == n:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
 
@@ -80,7 +79,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 5000 * tau
+    t_1 = 5000 *tau
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -162,7 +161,7 @@ def run_experiment(argv):
 
     """
     Get switches from input line in order of
-    [test, mode]
+    [test, mode, ffh on/of, equi/transition]
     """
 
     # switch testing mode
@@ -188,7 +187,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X6_Ldistphi01_fully300_eps01_q_longer03_sim50'
+    folder = 'X7_Ldistphi01_bara_m2_eps01_q_1e-1_1e2o3_d20'
 
     # make sure, testing output goes to its own folder:
 
@@ -205,7 +204,7 @@ def run_experiment(argv):
     create parameter combinations and index
     """
 
-    taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
+    taus = [round(x, 5) for x in list(np.logspace(-1, 2.3, 100))]
     phis = [0.01]
     epss = [0.01] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
@@ -243,18 +242,18 @@ def run_experiment(argv):
 
     # cluster mode: computation and post processing
     if mode == 0:
-        sample_size = 50 if not test else 2
+        sample_size = 200 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
-        handle.resave(eva3, name3)
         handle.resave(eva4, name4)
+        handle.resave(eva3, name3)
         handle.resave(eva5, name5)
         return 1
     # local mode: plotting only
     if mode == 1:
-        sample_size = 100 if not test else 2
+        sample_size = 50 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)

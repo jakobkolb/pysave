@@ -7,7 +7,8 @@
 #SBATCH --account=copan
 #SBATCH --time=0-24
 #SBATCH --nodes=4
-#SBATCH --tasks-per-node=16
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=2
 
 module load hpc/2015 anaconda/2.3.0
 export I_MPI_PMI_LIBRARY=/p/system/slurm/lib/libpmi.so

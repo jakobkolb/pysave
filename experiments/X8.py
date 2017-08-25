@@ -52,25 +52,25 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     """
 
     # Parameters:
-    input_params = {'phi': phi, 'tau': tau,
+    input_params = {'phi': phi, 'tau': tau, 'd': 0.2,
                     'eps': eps, 'test': test,
-                    'e_trajectory_output': False,
-                    'm_trajectory_output': False,
-                    'pi': 0.5}
+                    'e_trajectory_output': True,
+                    'm_trajectory_output': False}
 
     # building initial conditions
 
     # network:
-    n = 300
-    k = 3
+    n = 100
+    k = 2
     if test:
         n = 30
         k = 3
 
     while True:
-        #net = nx.barabasi_albert_graph(n, k)
-        net = nx.complete_graph(n)
-        if len(list(net)) > 1:
+        #net = nx.cycle_graph(n)
+        net = nx.barabasi_albert_graph(n, k)
+        #net = nx.complete_graph(n)
+        if len(max(nx.connected_component_subgraphs(net), key=len).nodes()) == n:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
 
@@ -80,7 +80,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 5000 * tau
+    t_1 = 2000 *tau
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -101,7 +101,6 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     # run model with abundant resource
     t_max = t_1 if not test else 1
-    m.R_depletion = False
     exit_status = m.run(t_max=t_max)
 
     res["runtime"] = time.clock() - t_start
@@ -109,6 +108,9 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     # store data in case of successful run
 
     if exit_status in [0, 1] or test:
+        # even and safe macro trajectory
+        res["trajectory"]= m.get_e_trajectory()
+        # save micro data
         res["adjacency"] = m.neighbors
         res["final state"] = pd.DataFrame(data=np.array([m.savings_rate,
                                                          m.capital,
@@ -118,7 +120,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
                                                    ])
         # compute national savings rate and save
         res["savings_rate"] = sum(m.income * m.savings_rate) / sum(m.income)
-        res["macro"] = [m.r, m.w, m.Y]
+        res["macro"] = [m.r, m.w, m.Y,m.tau]
 
 
 
@@ -188,7 +190,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X6_Ldistphi01_fully300_eps01_q_longer03_sim50'
+    folder = 'X8'
 
     # make sure, testing output goes to its own folder:
 
@@ -205,7 +207,7 @@ def run_experiment(argv):
     create parameter combinations and index
     """
 
-    taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
+    taus = [round(x, 5) for x in [7,8,9,10,11,12,13,14,15]]
     phis = [0.01]
     epss = [0.01] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
@@ -222,21 +224,41 @@ def run_experiment(argv):
     """
 
     name = 'parameter_scan'
-    name3 = name + '_macro'
-    eva3 = {"macro":
-                lambda fnames: [np.load(f)["macro"]
-                                for f in fnames]
-            }
-    name4 = name + '_all_si'
-    eva4 = {"all_si":
-                lambda fnames: [np.load(f)["final state"]
-                                          for f in fnames]
-            }
-    name5 = name + 'nat_sav'
-    eva5 = {"nat_sav":
-                lambda fnames: [np.load(f)["savings_rate"]
-                                for f in fnames]
-            }
+    name6 = name + 'nat_sav'
+    def x6(f):
+        """
+        computes the mean 30-year correlation coefficient (corr_30y) for one simulation
+
+        Parameters:
+            f: name of the inputfile
+        Returns:
+            dict{tau, corr_30y}
+        """
+        traj = np.load(f)["trajectory"]
+        print f
+        if f[36:37] == "1":
+            tau = int(f[36:38])
+        else:
+            tau = int(f[36:37])
+        #K = np.zeros(shape=(len(traj.index), 100))
+        #for a, t in enumerate(traj.index):
+        #    K[a, :] = traj['capital'][t]
+        df = pd.DataFrame(traj['capital'].apply(pd.Series), index=traj.index)
+        del traj
+        dfk = even_time_series_spacing(df, 2000 * tau)
+        corrs = []
+        # start, stop = 0, 2000*30
+        for agent in range(100):
+            x = dfk[agent].values[:-1]  # K[start:stop,agent]
+            t = 30  # 300
+            corrs.append(np.corrcoef(np.array([x[0:len(x) - t], x[t:len(x)]]))[0, 1])
+        return {tau: np.mean(corrs)}
+
+    eva6 = {"capital_corr":
+               lambda fnames: [x6(f)
+                               for f in fnames]
+           }
+
     """
     run computation and/or post processing and/or plotting
     """
@@ -248,24 +270,16 @@ def run_experiment(argv):
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
-        handle.resave(eva3, name3)
-        handle.resave(eva4, name4)
-        handle.resave(eva5, name5)
+        handle.resave(eva6, name6)
         return 1
     # local mode: plotting only
     if mode == 1:
-        sample_size = 100 if not test else 2
+        sample_size = 50 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
 
-        handle.resave(eva4, name4)
-        #handle.resave(cf3, name3)
-        #plot_trajectories(save_path_res, name1, None, None)
-        #print save_path_res, name1
-        #plot_tau_smean(save_path_res, name1, None, None)
-        #plot_tau_ymean(save_path_res, name1, None, None)
-
+        handle.resave(eva6, name6)
         return 1
 
 

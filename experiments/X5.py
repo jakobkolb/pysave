@@ -39,11 +39,11 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     Parameters:
     -----------
     tau : float > 0
-        the rate of the social updates
+        the inverse rate of the social updates, i.e. mean waiting time
     phi : float \in [0, 1]
-        the rewirking probability
+        the std of labor distribution, corresponds to sigma_L
     eps: float > 0
-        the rate of random events in the social update process
+        modulo of the maximum imitation error, corresponds to gamma
     test: int \in [0,1]
         whether this is a test run, e.g.
         can be executed with lower runtime
@@ -51,11 +51,8 @@ def RUN_FUNC(tau, phi, eps, test, filename):
         filename for the results of the run
     """
 
-    # Make different types of decision makers. Cues are
-
     # Parameters:
-
-    input_params = {'phi': phi, 'tau': tau,
+    input_params = {'phi': phi, 'tau': tau,   #  'd': 0.20,
                     'eps': eps, 'test': test,
                     'e_trajectory_output': False,
                     'm_trajectory_output': False}
@@ -63,20 +60,20 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     # building initial conditions
 
     # network:
-    n = 100
+    n = 50
     k = 3
     if test:
         n = 30
         k = 3
 
     while True:
-        #net = nx.barabasi_albert_graph(n, k)
-        net = nx.complete_graph(n)
-        if len(list(net)) > 1:
+        net = nx.barabasi_albert_graph(n, k)
+        #net = nx.watts_strogatz_graph(n,k,0.3)
+        if len(max(nx.connected_component_subgraphs(net), key=len).nodes()) == n:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
 
-    # opinions and investment
+    # savings rates
 
     savings_rate = [uniform(0, 1) for i in range(n)]
 
@@ -111,20 +108,16 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     # store data in case of successful run
 
     if exit_status in [0, 1] or test:
-        # even and safe macro trajectory
-        #res["trajectory"] = \
-        #    even_time_series_spacing(m.get_e_trajectory(), 401, 0., t_max)
-        # save micro data
         res["adjacency"] = m.neighbors
         res["final state"] = pd.DataFrame(data=np.array([m.savings_rate,
                                                          m.capital,
-                                                         m.income, m.P, m.consumption,
-                                                         m.w, m.r, m.Y]).transpose(),
-                                          columns=['s', 'k', 'i', 'L', 'C',
-                                                   'w', 'r', 'Y'])
-
+                                                         m.income, m.P, m.consumption
+                                                         ]).transpose(),
+                                          columns=['s', 'k', 'i', 'L', 'C'
+                                                   ])
         # compute national savings rate and save
         res["savings_rate"] = sum(m.income * m.savings_rate) / sum(m.income)
+        res["macro"] = [m.r, m.w, m.Y]
 
 
 
@@ -145,7 +138,7 @@ def run_experiment(argv):
     Take arv input variables and run sub_experiment accordingly.
     This happens in five steps:
     1)  parse input arguments to set switches
-        for [test, mode, ffh/av, equi/trans],
+        for [test, mode],
     2)  set output folders according to switches,
     3)  generate parameter combinations,
     4)  define names and dictionaries of callables to apply to sub_experiment
@@ -163,12 +156,12 @@ def run_experiment(argv):
     -------
     rt: int
         some return value to show whether sub_experiment succeeded
-        return 1 if sucessfull.
+        return 1 if successful.
     """
 
     """
     Get switches from input line in order of
-    [test, mode, ffh on/of, equi/transition]
+    [test, mode]
     """
 
     # switch testing mode
@@ -194,7 +187,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X5_Ldistphi01_fully_eps01_q_longer'
+    folder = 'X5_Ldistphi01_bara50_eps01_q_longer'
 
     # make sure, testing output goes to its own folder:
 
@@ -212,7 +205,7 @@ def run_experiment(argv):
     """
 
     taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
-    phis = [0.1]
+    phis = [0.01]
     epss = [0.01] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
 
@@ -228,7 +221,11 @@ def run_experiment(argv):
     """
 
     name = 'parameter_scan'
-
+    name3 = name + '_macro'
+    eva3 = {"macro":
+                lambda fnames: [np.load(f)["macro"]
+                                for f in fnames]
+            }
     name4 = name + '_all_si'
     eva4 = {"all_si":
                 lambda fnames: [np.load(f)["final state"]
@@ -251,11 +248,12 @@ def run_experiment(argv):
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
         handle.resave(eva4, name4)
+        handle.resave(eva3, name3)
         handle.resave(eva5, name5)
         return 1
     # local mode: plotting only
     if mode == 1:
-        sample_size = 100 if not test else 2
+        sample_size = 50 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)

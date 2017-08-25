@@ -39,23 +39,19 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     Parameters:
     -----------
     tau : float > 0
-        the rate of the social updates
+        the inverse rate of the social updates, i.e. mean waiting time
     phi : float \in [0, 1]
-        the rewirking probability
+        the std of labor distribution, corresponds to sigma_L
     eps: float > 0
-        the rate of random events in the social update process
+        modulo of the maximum imitation error, corresponds to gamma
     test: int \in [0,1]
         whether this is a test run, e.g.
         can be executed with lower runtime
     filename: string
         filename for the results of the run
     """
-
-    # Make different types of decision makers. Cues are
-
     # Parameters:
-
-    input_params = {'phi': phi, 'tau': tau,
+    input_params = {'phi': phi, 'tau': tau, 'd': 0.2,
                     'eps': eps, 'test': test,
                     'e_trajectory_output': False,
                     'm_trajectory_output': False}
@@ -64,25 +60,26 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     # network:
     n = 100
-    k = 3
+    k = 4
     if test:
         n = 30
         k = 3
 
     while True:
         #net = nx.barabasi_albert_graph(n, k)
-        net = nx.complete_graph(n)
-        if len(list(net)) > 1:
+        net = nx.watts_strogatz_graph(n, k, 0.4)
+        #net = nx.complete_graph(n)
+        if len(max(nx.connected_component_subgraphs(net), key=len).nodes()) == n:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
 
-    # opinions and investment
+    # savings rates
 
     savings_rate = [uniform(0, 1) for i in range(n)]
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 5000 * tau
+    t_1 = 5000* tau
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -111,20 +108,16 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     # store data in case of successful run
 
     if exit_status in [0, 1] or test:
-        # even and safe macro trajectory
-        #res["trajectory"] = \
-        #    even_time_series_spacing(m.get_e_trajectory(), 401, 0., t_max)
-        # save micro data
         res["adjacency"] = m.neighbors
         res["final state"] = pd.DataFrame(data=np.array([m.savings_rate,
                                                          m.capital,
-                                                         m.income, m.P, m.consumption,
-                                                         m.w, m.r, m.Y]).transpose(),
-                                          columns=['s', 'k', 'i', 'L', 'C',
-                                                   'w', 'r', 'Y'])
+                                                         m.income, m.P, m.consumption
+                                                         ]).transpose(),
+                                          columns=['s', 'k', 'i', 'L', 'C'
+                                                   ])
         # compute national savings rate and save
         res["savings_rate"] = sum(m.income * m.savings_rate) / sum(m.income)
-
+        res["macro"] = [m.r,m.w, m.Y ]
 
 
 
@@ -144,7 +137,7 @@ def run_experiment(argv):
     Take arv input variables and run sub_experiment accordingly.
     This happens in five steps:
     1)  parse input arguments to set switches
-        for [test, mode, ffh/av, equi/trans],
+        for [test, mode],
     2)  set output folders according to switches,
     3)  generate parameter combinations,
     4)  define names and dictionaries of callables to apply to sub_experiment
@@ -162,12 +155,12 @@ def run_experiment(argv):
     -------
     rt: int
         some return value to show whether sub_experiment succeeded
-        return 1 if sucessfull.
+        return 1 if successful.
     """
 
     """
     Get switches from input line in order of
-    [test, mode, ffh on/of, equi/transition]
+    [test, mode]
     """
 
     # switch testing mode
@@ -193,7 +186,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X3_Ldistphi01_fully_eps01_q_longer'
+    folder = 'X3_Ldistphi01_WS4_04_eps01_q_sim50_d20'
 
     # make sure, testing output goes to its own folder:
 
@@ -210,7 +203,7 @@ def run_experiment(argv):
     create parameter combinations and index
     """
 
-    taus = [round(x, 5) for x in list(np.logspace(0, 4, 100))]
+    taus = [round(x, 5) for x in list(np.logspace(0, 3, 100))]
     phis = [0.01]
     epss = [0.01] # [round(0.01, 5)]
     tau, phi, eps = [1., 10., 100.], [0], [0]
@@ -227,12 +220,19 @@ def run_experiment(argv):
     """
 
     name = 'parameter_scan'
-
+    # save macro variables into one dataframe
+    name3 = name + '_macro'
+    eva3 = {"macro":
+                lambda fnames: [np.load(f)["macro"]
+                                for f in fnames]
+            }
+    # save all final state variables
     name4 = name + '_all_si'
     eva4 = {"all_si":
                 lambda fnames: [np.load(f)["final state"]
                                           for f in fnames]
             }
+    # save income-weighted savings rate
     name5 = name + 'nat_sav'
     eva5 = {"nat_sav":
                 lambda fnames: [np.load(f)["savings_rate"]
@@ -244,24 +244,24 @@ def run_experiment(argv):
 
     # cluster mode: computation and post processing
     if mode == 0:
-        sample_size = 200 if not test else 2
+        sample_size = 50 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
         handle.compute(RUN_FUNC)
         handle.resave(eva4, name4)
         handle.resave(eva5, name5)
-
+        handle.resave(eva3, name3)
         return 1
     # local mode: plotting only
     if mode == 1:
-        sample_size = 200 if not test else 2
+        sample_size = 50 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)
 
         #handle.resave(eva4, name4)
-        handle.resave(eva5, name5)
+        handle.resave(eva3, name3)
 
         #handle.resave(cf3, name3)
         #plot_trajectories(save_path_res, name1, None, None)
