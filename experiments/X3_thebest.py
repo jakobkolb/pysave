@@ -51,7 +51,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
         filename for the results of the run
     """
     # Parameters:
-    input_params = {'phi': phi, 'tau': tau, 'd': 0.2,
+    input_params = {'phi': phi, 'tau': tau, 'd': 0.20,
                     'eps': eps, 'test': test,
                     'e_trajectory_output': False,
                     'm_trajectory_output': False}
@@ -60,14 +60,14 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     # network:
     n = 100
-    k = 4
+    k = 2
     if test:
         n = 30
         k = 3
 
     while True:
         #net = nx.barabasi_albert_graph(n, k)
-        net = nx.watts_strogatz_graph(n, k, 0.4)
+        net = nx.watts_strogatz_graph(n, 4, 0.8)
         #net = nx.complete_graph(n)
         if len(max(nx.connected_component_subgraphs(net), key=len).nodes()) == n:
             break
@@ -79,7 +79,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
 
     init_conditions = (adjacency_matrix, savings_rate)
 
-    t_1 = 5000* tau
+    t_1 = 5000*tau
 
     # initializing the model
     m = Model(*init_conditions, **input_params)
@@ -186,7 +186,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X3_Ldistphi01_WS4_04_eps01_q_sim50_d20'
+    folder = 'X4_Ldistphi01_WS4_08_eps01_q_sim50_d20'
 
     # make sure, testing output goes to its own folder:
 

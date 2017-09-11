@@ -52,7 +52,7 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     """
 
     # Parameters:
-    input_params = {'phi': phi, 'tau': tau,   #  'd': 0.20,
+    input_params = {'phi': phi, 'tau': tau,    'd': 0.20,
                     'eps': eps, 'test': test,
                     'e_trajectory_output': False,
                     'm_trajectory_output': False}
@@ -60,15 +60,16 @@ def RUN_FUNC(tau, phi, eps, test, filename):
     # building initial conditions
 
     # network:
-    n = 50
+    n = 100
     k = 3
     if test:
         n = 30
         k = 3
 
     while True:
-        net = nx.barabasi_albert_graph(n, k)
-        #net = nx.watts_strogatz_graph(n,k,0.3)
+        #net = nx.barabasi_albert_graph(n, k)
+        #net = nx.erdos_renyi_graph(n, 0.08)
+        net = nx.complete_graph(n)
         if len(max(nx.connected_component_subgraphs(net), key=len).nodes()) == n:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
@@ -187,7 +188,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X5_Ldistphi01_bara50_eps01_q_longer'
+    folder = 'X5_Ldistphi01_fully_eps01_q_longer_sim50_d20'
 
     # make sure, testing output goes to its own folder:
 
@@ -242,7 +243,7 @@ def run_experiment(argv):
 
     # cluster mode: computation and post processing
     if mode == 0:
-        sample_size = 200 if not test else 2
+        sample_size = 50 if not test else 2
 
         handle = experiment_handling(sample_size, param_combs, index,
                                      save_path_raw, save_path_res)

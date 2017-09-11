@@ -67,8 +67,8 @@ def RUN_FUNC(tau, phi, eps, test, filename):
         k = 3
 
     while True:
-        net = nx.barabasi_albert_graph(n, k)
-        #net = nx.watts_strogatz_graph(n,k,0.3)
+        #net = nx.barabasi_albert_graph(n, k)
+        net = nx.watts_strogatz_graph(n,4,0.4)
         if len(max(nx.connected_component_subgraphs(net), key=len).nodes()) == n:
             break
     adjacency_matrix = nx.adj_matrix(net).toarray()
@@ -187,7 +187,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X7_Ldistphi01_bara_m2_eps01_q_1e-1_1e2o3_d20'
+    folder = 'X7_Ldistphi01_WS4_04_eps01_q_1e-1_1e2o3_d20'
 
     # make sure, testing output goes to its own folder:
 

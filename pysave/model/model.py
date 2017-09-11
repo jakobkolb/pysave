@@ -18,7 +18,7 @@ class SavingsCore_voter:
 
         # Modes:
         #  1: only economy,
-        #  2: economy + opinion formation + decision making,
+        #  2: economy + decision making,
 
         self.mode = 2
 
@@ -323,8 +323,7 @@ class SavingsCore_voter:
 
     def update_opinion_formation(self, candidate, neighbor,
                                  neighbors):
-        if self.fitness(neighbor)>self.fitness(candidate):
-            self.savings_rate[candidate] = self.savings_rate[neighbor]
+        self.savings_rate[candidate] = self.savings_rate[neighbor]
         return 0
 
     def detect_consensus_state(self, d_opinions):
@@ -800,17 +799,17 @@ if __name__ == '__main__':
     # network:
 
     while True:
-        #net = nx.erdos_renyi_graph(n, p)
-        net = nx.barabasi_albert_graph(n,k)
+        net = nx.erdos_renyi_graph(n, 0.1)
+        #net = nx.barabasi_albert_graph(n,k)
         #net = nx.complete_graph(n)
-        if len(list(net)) > 1:
+        if len(max(nx.connected_component_subgraphs(net), key=len).nodes()) == n:
             break
 
     adjacency_matrix = nx.adj_matrix(net).toarray()
 
     capital = np.ones(n)
 
-    input_parameters = {'tau': 7, 'phi': 0.01, 'eps': 0.01, 'b': 1., 'P': 1.,
+    input_parameters = {'tau': 20, 'phi': 0.01, 'eps': 0.01, 'b': 1., 'P': 1.,
                         'd': 0.20, 'pi': 0.5}
     init_conditions = (adjacency_matrix, savings_rates, capital)
 
@@ -824,8 +823,8 @@ if __name__ == '__main__':
     model.debug = True
 
     # Run Model
-    tmax = 2000*7
+    tmax = 5000*20
     model.run(t_max=tmax)
     trajectory = model.get_e_trajectory()
-    with open('trajectory_Ldist_tau7_phi01_eps01_bara_2_d20', 'wb') as dumpfile:
+    with open('trajectory_ER0o1_tau20_d20', 'wb') as dumpfile:
          cp.dump(trajectory, dumpfile)
