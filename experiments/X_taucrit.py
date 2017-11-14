@@ -60,7 +60,7 @@ def RUN_FUNC(tau, n, p, test, filename):
 
     # network:
     n = n
-    k = p
+    #k = p
     if test:
         n = 30
         k = 3
@@ -189,7 +189,7 @@ def run_experiment(argv):
     else:
         tmppath = "./"
 
-    folder = 'X4_Ldistphi01_WS4_08_eps01_q_sim50_d20'
+    folder = 'Xtau_crit_d20_ER'
 
     # make sure, testing output goes to its own folder:
 
@@ -207,7 +207,7 @@ def run_experiment(argv):
     """
 
     taus = [round(x, 5) for x in list(np.logspace(0, 3, 50))]
-    ns = [50,100,150,200,250,300,350,400]
+    ns = [50,100,200,300,400]
     ps = [0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
     tau, phi, eps = [1., 10., 100.], [0], [0]
 
