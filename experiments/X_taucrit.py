@@ -21,8 +21,8 @@ import numpy as np
 import pandas as pd
 from random import uniform
 
-from pysave.visualization.data_visualization \
-    import plot_trajectories, plot_tau_smean,plot_tau_ymean
+# from pysave.visualization.data_visualization \
+#     import plot_trajectories, plot_tau_smean,plot_tau_ymean
 from pysave.model.model import SavingsCore_thebest_ext as Model
 from pymofa.experiment_handling \
     import experiment_handling, even_time_series_spacing
@@ -103,6 +103,9 @@ def RUN_FUNC(tau, n, p, test, filename):
     # run model with abundant resource
     t_max = t_1 if not test else 1
     m.R_depletion = False
+    if test:
+        print('starting run with input parameters')
+        print(input_params)
     exit_status = m.run(t_max=t_max)
 
     res["runtime"] = time.clock() - t_start
@@ -178,14 +181,16 @@ def run_experiment(argv):
     else:
         mode = 0
 
+    if test:
+        print('running in debug mode', flush=True)
     """
     set input/output paths
     """
     respath = os.path.dirname(os.path.realpath(__file__)) + "/output_data"
-    if getpass.getuser() == "yuki":
+    if getpass.getuser() == "jakob":
         tmppath = respath
-    elif getpass.getuser() == "asano":
-        tmppath = "/p/tmp/asano/Savings_Experiments"
+    elif getpass.getuser() == "kolb":
+        tmppath = "/p/tmp/kolb/Savings_Experiments"
     else:
         tmppath = "./"
 

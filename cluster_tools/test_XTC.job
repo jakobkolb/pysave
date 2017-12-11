@@ -5,8 +5,8 @@
 #SBATCH --output=%A_X9_%a_.out
 #SBATCH --error=%A_X9_%a_.err
 #SBATCH --account=copan
-#SBATCH --nodes=8
-#SBATCH --ntasks-per-node=16
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
 
 module load hpc/2015 anaconda/2.3.0
 export I_MPI_PMI_LIBRARY=/p/system/slurm/lib/libpmi.so
@@ -19,4 +19,4 @@ echo "$SLURM_NTASKS tasks"
 echo "_______________________________________________"
 
 cd ../experiments
-srun -n $SLURM_NTASKS --mpi=pmi2 python X_taucrit.py
+srun -n $SLURM_NTASKS --mpi=pmi2 python X_taucrit.py 1 0

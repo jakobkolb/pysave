@@ -526,6 +526,8 @@ class SavingsCore_thebest_ext:
         """
         candidate = 0
         while self.t < t_max:
+            if test:
+                print(self.t)
             # 1 find update candidate and respective update time
             (candidate, neighbor,
              neighbors, update_time) = self.find_update_candidates()
